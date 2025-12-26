@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分析結果 | {{ title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF2E63;
+            --secondary: #08D9D6;
+            --dark: #252A34;
+            --card-bg: #303642;
+            --light: #EAEAEA;
+            --accent: #F9ED69;
+        }
+
+        body {
+            background-color: var(--dark);
+            color: var(--light);
+            font-family: 'Zen Maru Gothic', sans-serif;
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            border-bottom: 2px dashed var(--secondary);
+            padding-bottom: 2rem;
+        }
+
+        h1 {
+            font-family: 'Mochiy Pop One', sans-serif;
+            color: var(--accent);
+            text-shadow: 2px 2px var(--primary);
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        .video-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: var(--secondary);
+            text-decoration: none;
+            border: 1px solid var(--secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+
+        .video-link:hover {
+            background: var(--secondary);
+            color: var(--dark);
+        }
+
+        .content {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 2rem;
+            border-radius: 20px;
+        }
+
+        /* Generated Markdown Styles */
+        h2 {
+            border-left: 5px solid var(--primary);
+            padding-left: 1rem;
+            color: var(--secondary);
+            margin-top: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        th, td {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 1px solid #444;
+        }
+
+        th {
+            background-color: rgba(255, 46, 99, 0.2);
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+        }
+
+        strong {
+            color: var(--accent);
+            background: rgba(249, 237, 105, 0.1);
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+
+        blockquote {
+            border-left: 4px solid var(--primary);
+            margin: 0;
+            padding-left: 1rem;
+            color: #ccc;
+            font-style: italic;
+        }
+
+        .back-btn {
+            display: block;
+            margin: 3rem auto;
+            background: var(--dark);
+            border: 2px solid var(--light);
+            color: var(--light);
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-align: center;
+            width: fit-content;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: var(--light);
+            color: var(--dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>{{ title }}</h1>
+            <a href="{{ video_url }}" target="_blank" class="video-link">📺 YouTubeで見る</a>
+        </header>
+
+        <div class="content">
+            {{ analysis_html | safe }}
+        </div>
+
+        <a href="/" class="back-btn">⬅ もう一度分析する</a>
+    </div>
+</body>
+</html>

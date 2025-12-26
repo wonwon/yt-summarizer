@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .copy-box {
+            background: #f9f9f9;
+            padding: 1em;
+            border: 1px solid #ccc;
+            white-space: pre-wrap;
+            font-family: monospace;
+            cursor: pointer;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>{{ title }}</h2>
+    <p><a href="{{ video_url }}" target="_blank">🔗 YouTubeで見る</a></p>
+
+    <h3>🎤 字幕全文（クリックでコピー）</h3>
+    <div id="copyTarget" class="copy-box" onclick="copyText()">
+        🔘 クリックでコピー<br><br>{{ text|safe }}
+    </div>
+
+    <h3>🤖 Geminiによる要約</h3>
+    <div>{{ summary_html|safe }}</div>
+
+    <h3 class="success">
+        ✅ 処理完了: コンソールログに各ステップのレスポンスを出力しました。<br>
+        （メール送信: 実施 / 添付音声: {% if has_audio %}あり{% else %}なし{% endif %}）
+    </h3>
+
+    <script>
+        function copyText() {
+            const element = document.getElementById("copyTarget");
+            const text = element.innerText.replace(/^🔘.*\n+/, "");
+            navigator.clipboard.writeText(text).then(function () {
+                alert("✅ コピーしました！");
+            }, function (err) {
+                alert("❌ コピーに失敗しました: " + err);
+            });
+        }
+        // 自動シャットダウンは削除（リロード対策）
+    </script>
+</body>
+
+</html>

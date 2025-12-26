@@ -1,0 +1,25 @@
+# Environments
+venv/
+.vscode/
+.env
+
+# Google API & Credentials
+credentials.json
+token.json
+gcp-tts-key.json
+key.json
+cookies.txt
+
+# Python cache & logs
+__pycache__/
+*.log
+app.log
+
+# App specific outputs
+temp/
+output/
+captions/
+.antigravity-images/
+
+# System files
+.DS_Store

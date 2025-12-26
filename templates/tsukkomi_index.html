@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ツッコミ＆妄想アナライザー - Gemini 2.5 Flash Lite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF2E63; /* Pop Pink */
+            --secondary: #08D9D6; /* Cyan */
+            --dark: #252A34;
+            --light: #EAEAEA;
+            --accent: #F9ED69; /* Yellow */
+        }
+
+        body {
+            background-color: var(--dark);
+            color: var(--light);
+            font-family: 'Zen Maru Gothic', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(var(--secondary) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--secondary);
+            border-radius: 20px;
+            padding: 3rem;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 20px rgba(8, 217, 214, 0.3);
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Mochiy Pop One', sans-serif;
+            color: var(--accent);
+            text-shadow: 4px 4px var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--secondary);
+            font-size: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 1.2rem;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1.1rem;
+            font-family: inherit;
+            outline: none;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 15px rgba(255, 46, 99, 0.4);
+        }
+
+        button.analyze-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Mochiy Pop One', sans-serif;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 0 #bc1e45;
+        }
+
+        button.analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 0 #bc1e45;
+        }
+
+        button.analyze-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #bc1e45;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 2rem;
+            font-weight: bold;
+            color: var(--accent);
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+
+        .error {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: bold;
+            background: rgba(255, 46, 99, 0.1);
+            padding: 0.5rem;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ ツッコミ分析 ⚡</h1>
+        <p class="subtitle">Powered by Gemini 2.5 Flash Lite</p>
+
+        {% if error %}
+        <div class="error">⚠️ {{ error }}</div>
+        {% endif %}
+
+        <form method="POST" onsubmit="document.querySelector('.loading').style.display='block'">
+            <div class="input-group">
+                <input type="text" name="youtube_url" placeholder="YouTube URLを貼り付けてください..." required>
+            </div>
+            <button type="submit" class="analyze-btn">解析開始！！</button>
+        </form>
+
+        <div class="loading">
+            🚀 激しいツッコミと妄想を抽出中...<br>
+            （字幕の長さにより数秒〜数分かかります）
+        </div>
+    </div>
+</body>
+</html>

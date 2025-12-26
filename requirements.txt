@@ -1,0 +1,8 @@
+flask
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-generativeai
+python-dotenv
+markdown
+google-cloud-secret-manager

@@ -1,0 +1,48 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>YouTube Insight Gen (要約ツール)</title>
+  </head>
+
+  <body>
+    <h1>YouTube URL を入力してください</h1>
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <ul>
+      {% for category, message in messages %}
+      <li style="color: {{ 'red' if category == 'error' else 'green' }}">
+        {{ message }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %} {% endwith %}
+
+    <form method="POST">
+      <label for="youtube_url">YouTubeのURL:</label>
+      <input
+        type="text"
+        id="youtube_url"
+        name="youtube_url"
+        style="width: 500px"
+        placeholder="https://www.youtube.com/watch?v=..."
+        required
+      />
+      <br /><br />
+      <label for="genre">ジャンル:</label>
+      <select name="genre" id="genre">
+        <option value="auto" selected>自動判定</option>
+        {% for key, label in genres.items() %}
+        <option value="{{ key }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+      <br /><br />
+      <button type="submit">送信</button>
+    </form>
+    <script>
+       // 自動シャットダウンはリロード時にも発火してしまうため削除
+       // 必要であれば手動終了ボタンを追加します
+    </script>
+  </body>
+</html>
