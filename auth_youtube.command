@@ -11,21 +11,24 @@ else
 fi
 
 echo "========================================================"
-echo "YouTube認証セットアップ (初回のみ)"
+echo "YouTube認証セットアップ (重要)"
 echo "========================================================"
-echo "この後、画面に「認証コード」と「URL」が表示されます。"
-echo "1. URL (google.com/device) をブラウザで開く"
-echo "2. 表示されたコードを入力する"
-echo "3. Googleアカウントでログインして許可する"
+echo "YouTubeの仕様変更により、従来のOAuth方式は利用できなくなりました。"
+echo "現在は Chrome ブラウザから 'cookies.txt' を取得する方法を推奨しています。"
+echo ""
+echo "これより 'setup_cookies.command' を実行します。"
+echo "画面の指示に従い、Chromeブラウザでの許可を行ってください。"
 echo "========================================================"
 echo ""
 
-# ダミー動画で認証フローを実行 (ダウンロードはしない)
-yt-dlp --username oauth2 --password '' --simulate "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+# setup_cookies.command を実行
+chmod +x setup_cookies.command
+./setup_cookies.command
 
 echo ""
 echo "========================================================"
-echo "認証が完了しました。"
+echo "処理が完了しました。"
+echo "cookies.txt が正常に生成されていれば、準備完了です。"
 echo "このウィンドウを閉じて、アプリを起動してください。"
 echo "========================================================"
 read -p "[Enter] キーを押して終了してください..."

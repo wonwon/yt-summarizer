@@ -25,6 +25,7 @@ from googleapiclient.discovery import build
 TTS_VOICE_NAME = "ja-JP-Standard-B"
 TEMP_MP3_FILE = "temp_summary_audio.mp3"
 TTS_SPEAKING_RATE = 1.8
+TOKEN_FILE = "token.json"
 # -----------------
 
 app = Flask(__name__)
@@ -220,38 +221,47 @@ def detect_genre(cleaned_text: str, video_title: str) -> str:
 
 
 def send_gmail(subject: str, html_body: str, to_email: str, attachment_path: Optional[str] = None):
-    creds = Credentials.from_authorized_user_file("token.json", SCOPES)
-    service = build("gmail", "v1", credentials=creds)
-    message = MIMEMultipart()
-    message["to"] = to_email
-    message["subject"] = subject
+    if not os.path.exists(TOKEN_FILE):
+        print("⚠️ token.json が見つかりません。メール送信をスキップします。")
+        return
 
-    # 本文
-    message.attach(MIMEText(html_body, "html"))
+    try:
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+        service = build("gmail", "v1", credentials=creds)
+        message = MIMEMultipart()
+        message["to"] = to_email
+        message["subject"] = subject
 
-    # 添付ファイル
-    if attachment_path and os.path.exists(attachment_path):
-        with open(attachment_path, "rb") as f:
-            file_data = f.read()
-            file_name = os.path.basename(attachment_path)
+        # 本文
+        message.attach(MIMEText(html_body, "html"))
 
-        # 添付ファイルのMIMEタイプを自動判別
-        mime_type, _ = mimetypes.guess_type(attachment_path)
-        mime_type = mime_type.split("/") if mime_type else ["application", "octet-stream"]
+        # 添付ファイル
+        if attachment_path and os.path.exists(attachment_path):
+            with open(attachment_path, "rb") as f:
+                file_data = f.read()
+                file_name = os.path.basename(attachment_path)
 
-        # 添付ファイルの設定
-        attachment = MIMEBase(mime_type[0], mime_type[1])
-        attachment.set_payload(file_data)
-        encoders.encode_base64(attachment)
-        attachment.add_header(
-            "Content-Disposition",
-            f"attachment; filename*=UTF-8''{file_name}",
-        )
-        message.attach(attachment)
+            # 添付ファイルのMIMEタイプを自動判別
+            mime_type, _ = mimetypes.guess_type(attachment_path)
+            mime_type = mime_type.split("/") if mime_type else ["application", "octet-stream"]
 
-    raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
-    body = {"raw": raw}
-    service.users().messages().send(userId="me", body=body).execute()
+            # 添付ファイルの設定
+            attachment = MIMEBase(mime_type[0], mime_type[1])
+            attachment.set_payload(file_data)
+            encoders.encode_base64(attachment)
+            attachment.add_header(
+                "Content-Disposition",
+                f"attachment; filename*=UTF-8''{file_name}",
+            )
+            message.attach(attachment)
+
+        raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        body = {"raw": raw}
+        service.users().messages().send(userId="me", body=body).execute()
+        print("✅ メール送信成功")
+    except Exception as e:
+        print(f"❌ メール送信失敗: {e}")
+
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -270,8 +280,11 @@ def index():
         youtube_url = request.args.get("url")
         # GETの場合はgenre指定なしとみなす(またはクエリパラメータで受ける拡張も可)
 
+    # Gmail認証チェック
+    needs_gmail_auth = not os.path.exists(TOKEN_FILE)
+
     if not youtube_url:
-        return render_template("index.html", error_message="URLが指定されていません" if request.method == "POST" else None, genres=genres_for_template)
+        return render_template("index.html", error_message="URLが指定されていません" if request.method == "POST" else None, genres=genres_for_template, needs_gmail_auth=needs_gmail_auth)
 
     try:
         print("\n==============================")

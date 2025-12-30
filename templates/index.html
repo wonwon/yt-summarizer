@@ -19,6 +19,12 @@
     </ul>
     {% endif %} {% endwith %}
 
+    {% if needs_gmail_auth %}
+    <div style="background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+      <strong>⚠️ Gmail認証が必要です:</strong> メール送信機能を有効にするには、<a href="/auth">こちらをクリックして認証</a>を行ってください。
+    </div>
+    {% endif %}
+
     <form method="POST">
       <label for="youtube_url">YouTubeのURL:</label>
       <input
