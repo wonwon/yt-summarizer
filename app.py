@@ -32,11 +32,20 @@ app = Flask(__name__)
 app.secret_key = "your_secret_key"
 
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Gemini APIキー（フォールバック対応）
+GEMINI_API_KEY_PRIMARY = os.getenv("GEMINI_API_KEY_PRIMARY")
+GEMINI_API_KEY_FALLBACK = os.getenv("GEMINI_API_KEY_FALLBACK")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # 後方互換性のため
+
 GMAIL_TO = os.getenv("GMAIL_TO")
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
-genai.configure(api_key=GEMINI_API_KEY)
+# APIキーのバリデーション
+if not (GEMINI_API_KEY_PRIMARY or GEMINI_API_KEY):
+    print("❌ GEMINI_API_KEY_PRIMARY または GEMINI_API_KEY が設定されていません")
+    import sys
+    sys.exit(1)
 CAPTIONS_DIR = Path("captions")
 CAPTIONS_DIR.mkdir(exist_ok=True)
 
@@ -159,11 +168,49 @@ def create_prompt(cleaned_text: str, video_title: str, video_url: str, genre: st
 
 
 def call_gemini(prompt: str) -> str:
+    """
+    Gemini APIを呼び出し、エラー時に自動的にフォールバックAPIに切り替える
+    """
     model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    print(f"🤖 Using Gemini Model: {model_name}")
-    model = genai.GenerativeModel(model_name)
-    response = model.generate_content(prompt)
-    return response.text
+    
+    # APIキーのリストを作成（優先順位順）
+    api_keys = []
+    if GEMINI_API_KEY_PRIMARY:
+        api_keys.append(("PRIMARY (無料枠)", GEMINI_API_KEY_PRIMARY))
+    if GEMINI_API_KEY_FALLBACK:
+        api_keys.append(("FALLBACK (有料枠)", GEMINI_API_KEY_FALLBACK))
+    
+    # 後方互換性: 新しいキーが設定されていない場合は従来のキーを使用
+    if not api_keys and GEMINI_API_KEY:
+        api_keys.append(("DEFAULT", GEMINI_API_KEY))
+    
+    # 各APIキーで順番に試行
+    last_error = None
+    for key_name, api_key in api_keys:
+        try:
+            print(f"🤖 Gemini API呼び出し中 ({key_name}, Model: {model_name})")
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt)
+            print(f"✅ Gemini要約取得完了 ({key_name})")
+            return response.text
+        
+        except Exception as e:
+            error_msg = str(e)
+            print(f"⚠️ {key_name} でエラー発生: {error_msg}")
+            last_error = e
+            
+            # 次のAPIキーがある場合は続行、なければエラーを投げる
+            if api_keys.index((key_name, api_key)) < len(api_keys) - 1:
+                print(f"🔄 次のAPIキーでリトライします...")
+                continue
+            else:
+                # すべてのAPIキーで失敗
+                print(f"❌ すべてのAPIキーで失敗しました")
+                raise last_error
+    
+    # ここには到達しないはずだが、念のため
+    raise RuntimeError("Gemini API呼び出しに失敗しました")
 
 
 def format_as_html(title: str, md_text: str, video_url: str) -> str:

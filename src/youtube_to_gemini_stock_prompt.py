@@ -18,15 +18,19 @@ from googleapiclient.discovery import build
 # 事前準備
 # ===============================
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Gemini APIキー（フォールバック対応）
+GEMINI_API_KEY_PRIMARY = os.getenv("GEMINI_API_KEY_PRIMARY")
+GEMINI_API_KEY_FALLBACK = os.getenv("GEMINI_API_KEY_FALLBACK")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # 後方互換性のため
+
 GMAIL_TO = os.getenv("GMAIL_TO")  # .envで送信先指定推奨
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
-if not GEMINI_API_KEY:
-    print("❌ .envファイルにGEMINI_API_KEYが定義されていません")
+# APIキーのバリデーション
+if not (GEMINI_API_KEY_PRIMARY or GEMINI_API_KEY):
+    print("❌ GEMINI_API_KEY_PRIMARY または GEMINI_API_KEY が設定されていません")
     sys.exit(1)
-
-genai.configure(api_key=GEMINI_API_KEY)
 
 CAPTIONS_DIR = Path("captions")
 CAPTIONS_DIR.mkdir(exist_ok=True)
@@ -152,11 +156,49 @@ def create_prompt(cleaned_text: str, video_title: str) -> str:
 # Geminiで要約取得
 # ===============================
 def call_gemini(prompt: str) -> str:
-    print("🤖 Gemini に要約を依頼中...\n")
-    model = genai.GenerativeModel("gemini-2.5-flash")
-    response = model.generate_content(prompt)
-    print("✅ Gemini 要約取得完了\n")
-    return response.text
+    """
+    Gemini APIを呼び出し、エラー時に自動的にフォールバックAPIに切り替える
+    """
+    model_name = "gemini-2.5-flash"
+    
+    # APIキーのリストを作成（優先順位順）
+    api_keys = []
+    if GEMINI_API_KEY_PRIMARY:
+        api_keys.append(("PRIMARY (無料枠)", GEMINI_API_KEY_PRIMARY))
+    if GEMINI_API_KEY_FALLBACK:
+        api_keys.append(("FALLBACK (有料枠)", GEMINI_API_KEY_FALLBACK))
+    
+    # 後方互換性: 新しいキーが設定されていない場合は従来のキーを使用
+    if not api_keys and GEMINI_API_KEY:
+        api_keys.append(("DEFAULT", GEMINI_API_KEY))
+    
+    # 各APIキーで順番に試行
+    last_error = None
+    for key_name, api_key in api_keys:
+        try:
+            print(f"🤖 Gemini API呼び出し中 ({key_name}, Model: {model_name})")
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt)
+            print(f"✅ Gemini要約取得完了 ({key_name})")
+            return response.text
+        
+        except Exception as e:
+            error_msg = str(e)
+            print(f"⚠️ {key_name} でエラー発生: {error_msg}")
+            last_error = e
+            
+            # 次のAPIキーがある場合は続行、なければエラーを投げる
+            if api_keys.index((key_name, api_key)) < len(api_keys) - 1:
+                print(f"🔄 次のAPIキーでリトライします...")
+                continue
+            else:
+                # すべてのAPIキーで失敗
+                print(f"❌ すべてのAPIキーで失敗しました")
+                raise last_error
+    
+    # ここには到達しないはずだが、念のため
+    raise RuntimeError("Gemini API呼び出しに失敗しました")
 
 
 # ===============================
@@ -216,7 +258,7 @@ def main():
     prompt = create_prompt(cleaned_text, video_title, youtube_url, audience="AI初学者", length="600字", max_links=5)
     summary_md = call_gemini(prompt)
     html_body = format_as_html(video_title, summary_md)
-    subject = f"【要約完了】{video_title}"
+    subject = f"【YT要約】{video_title}"
     send_gmail(subject, html_body, GMAIL_TO)
 
 
