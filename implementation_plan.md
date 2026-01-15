@@ -45,7 +45,7 @@ YouTube 動画（特定のチャンネル等）の字幕情報から、激しい
 ## ファイル構成予定
 
 ```
-/Users/tanakaseiji/Project/GeminiCLI/YouTubeInsightGen/
+/Volumes/HD-NRLD-A/Project/GeminiCLI/YouTubeInsightGen/
   ├── app.py (既存)
   ├── app_tsukkomi.py (新規)
   ├── templates/

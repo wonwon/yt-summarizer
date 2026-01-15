@@ -7,8 +7,9 @@ def setup_gemini_model(api_key=None):
     api_key = api_key or os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY が環境変数または引数で指定されていません。")
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
     genai.configure(api_key=api_key)
-    return genai.GenerativeModel("gemini-1.5-pro")  # または "gemini-2.5-flash"
+    return genai.GenerativeModel(model_name)
 
 def generate_text(model, prompt: str, input_text: str) -> str:
     full_prompt = prompt.strip() + "\n\n" + input_text.strip()

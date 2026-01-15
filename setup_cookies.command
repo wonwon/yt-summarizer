@@ -1,9 +1,11 @@
 #!/bin/bash
 cd "$(dirname "$0")"
+dot_clean -m . 
+dot_clean -m /Users/tanakaseiji/YouTubeInsightGen_venv
 
 # 仮想環境の存在確認とactivate
-if [ -d "venv" ]; then
-    source venv/bin/activate
+if [ -d "/Users/tanakaseiji/YouTubeInsightGen_venv" ]; then
+    source /Users/tanakaseiji/YouTubeInsightGen_venv/bin/activate
 else
     echo "venvが見つかりません。作成してください。"
     read -p "[Enter] キーを押して終了してください..."
@@ -21,7 +23,7 @@ read -p "準備ができたら [Enter] キーを押してください..."
 
 # Cookiesをダンプするための一時実行
 # --skip-download で動画はダウンロードせず、cookiesだけ処理させる
-yt-dlp --cookies-from-browser chrome --cookies cookies.txt --skip-download "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+yt-dlp --impersonate chrome --extractor-args "youtube:player_client=web_creator,ios,android" --cookies-from-browser chrome --cookies cookies.txt --skip-download "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 echo ""
 if [ -f "cookies.txt" ]; then

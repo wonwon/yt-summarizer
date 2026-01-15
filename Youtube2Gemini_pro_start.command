@@ -1,9 +1,11 @@
 #!/bin/bash
 cd "$(dirname "$0")"
+dot_clean -m . 
+dot_clean -m /Users/tanakaseiji/YouTubeInsightGen_venv
 
 # 仮想環境の存在確認とactivate
-if [ -d "venv" ]; then
-    source venv/bin/activate
+if [ -d "/Users/tanakaseiji/YouTubeInsightGen_venv" ]; then
+    source /Users/tanakaseiji/YouTubeInsightGen_venv/bin/activate
 else
     echo "venvが見つかりません。作成してください。"
     read -p "[Enter] キーを押して終了してください..."

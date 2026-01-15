@@ -88,7 +88,8 @@ def download_captions(youtube_url: str) -> Path:
     clean_url = clean_youtube_url(youtube_url)
     cmd = [
             "yt-dlp",
-            # cookies.txt があれば自動的に使われるように実装
+            "--impersonate", "chrome",
+            "--extractor-args", "youtube:player_client=web_creator,ios,android",
             "--write-auto-sub",
             "--sub-lang",
             "ja,en",
@@ -103,12 +104,21 @@ def download_captions(youtube_url: str) -> Path:
         cmd.insert(1, "--cookies")
         cmd.insert(2, "cookies.txt")
 
-    subprocess.run(
-        cmd,
-        check=True,
-    )
+    # yt-dlpは一部の字幕取得に失敗してもエラー1を返すことがあるため、
+    # 実行後にファイルが存在するかどうかで判定する。
+    try:
+        subprocess.run(
+            cmd,
+            check=False,
+            # capture_output=True, # ログ出力のために追加しても良い
+        )
+    except Exception as e:
+        print(f"⚠️ yt-dlp 実行中に致命的なエラーが発生しました: {e}")
+        return None
+
     # 優先順位: ja > en > 他
-    candidates = list(CAPTIONS_DIR.glob("*.vtt"))
+    # 隠しファイル (._*) を除外
+    candidates = [p for p in CAPTIONS_DIR.glob("*.vtt") if not p.name.startswith("._")]
     if not candidates:
         return None
 
@@ -343,6 +353,7 @@ def index():
         # 既存ファイル削除
         for ext in ("*.vtt", "*.txt"):
             for file in CAPTIONS_DIR.glob(ext):
+                # 隠しファイル（._*）も削除対象に含めるが、ファイルリスト取得時には無視する
                 try:
                     file.unlink()
                     print(f"🗑️ 旧ファイル削除: {file}")

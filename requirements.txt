@@ -6,3 +6,5 @@ google-generativeai
 python-dotenv
 markdown
 google-cloud-secret-manager
+google-cloud-texttospeech
+yt-dlp
