@@ -151,6 +151,13 @@ def index():
         analysis_md = analyze_tsukkomi(cleaned, title)
         analysis_html = markdown.markdown(analysis_md, extensions=["tables", "fenced_code"])
         
+        # captionsフォルダーをクリーンアップ
+        for file in CAPTIONS_DIR.glob("*"):
+            try:
+                file.unlink()
+            except:
+                pass
+        
         return render_template(
             "tsukkomi_result.html",
             title=title,

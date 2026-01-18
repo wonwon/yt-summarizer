@@ -344,13 +344,14 @@ def index():
         return render_template("index.html", error_message="URLが指定されていません" if request.method == "POST" else None, genres=genres_for_template, needs_gmail_auth=needs_gmail_auth)
 
     # 重複処理防止: セッションで最後に処理したURLを追跡
-    from flask import session
-    last_processed_url = session.get('last_processed_url')
+    # from flask import session
+    # last_processed_url = session.get('last_processed_url')
     
     # GETリクエスト（ブックマークレット）の場合、同じURLを繰り返し処理しない
-    if request.method == "GET" and youtube_url == last_processed_url:
-        print(f"⚠️ このURLは既に処理済みです: {youtube_url}")
-        return render_template("index.html", error_message="このURLは既に処理済みです。新しい動画を選択してください。", genres=genres_for_template, needs_gmail_auth=needs_gmail_auth)
+    # FIXME: 一旦無効化 - デバッグ中
+    # if request.method == "GET" and youtube_url == last_processed_url:
+    #     print(f"⚠️ このURLは既に処理済みです: {youtube_url}")
+    #     return render_template("index.html", error_message="このURLは既に処理済みです。新しい動画を選択してください。", genres=genres_for_template, needs_gmail_auth=needs_gmail_auth)
 
     # デバッグ: 受信したURLを確認
     print(f"\n{'='*50}")
@@ -415,11 +416,13 @@ def index():
             os.remove(TEMP_MP3_FILE)
             print(f"🗑️ 一時TTSファイル削除: {TEMP_MP3_FILE}")
 
-        # 結果表示
+
+        # 結果表示（クリーンアップはfinallyブロックで実行）
         escaped_text = cleaned.replace("<", "&lt;").replace(">", "&gt;")
         
         # 処理完了したURLをセッションに記録（重複処理防止用）
-        session['last_processed_url'] = youtube_url
+        # FIXME: 一旦無効化 - デバッグ中
+        # session['last_processed_url'] = youtube_url
         
         return render_template(
             "result.html",
@@ -436,6 +439,16 @@ def index():
         import traceback
         traceback.print_exc()
         return f"<h2>❌ エラー発生</h2><pre>{str(e)}</pre>", 500
+    finally:
+        # 処理が成功しても失敗しても、必ずcaptionsフォルダーをクリーンアップ
+        print("\n🧹 [FINALLY] 字幕ファイルをクリーンアップ中...")
+        for file in CAPTIONS_DIR.glob("*"):
+            try:
+                file.unlink()
+                print(f"  🗑️ 削除: {file.name}")
+            except Exception as e:
+                print(f"  ⚠️ 削除失敗: {file.name} - {e}")
+        print("✅ [FINALLY] クリーンアップ完了\n")
 
 
 @app.route("/auth")
