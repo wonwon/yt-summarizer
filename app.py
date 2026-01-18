@@ -334,14 +334,31 @@ def index():
         youtube_url = request.form.get("youtube_url")
         genre = request.form.get("genre", "auto")
     elif request.method == "GET":
+        # ブックマークレット対応: URLパラメータから動画URLを取得
         youtube_url = request.args.get("url")
-        # GETの場合はgenre指定なしとみなす(またはクエリパラメータで受ける拡張も可)
 
     # Gmail認証チェック
     needs_gmail_auth = not os.path.exists(TOKEN_FILE)
 
     if not youtube_url:
         return render_template("index.html", error_message="URLが指定されていません" if request.method == "POST" else None, genres=genres_for_template, needs_gmail_auth=needs_gmail_auth)
+
+    # 重複処理防止: セッションで最後に処理したURLを追跡
+    from flask import session
+    last_processed_url = session.get('last_processed_url')
+    
+    # GETリクエスト（ブックマークレット）の場合、同じURLを繰り返し処理しない
+    if request.method == "GET" and youtube_url == last_processed_url:
+        print(f"⚠️ このURLは既に処理済みです: {youtube_url}")
+        return render_template("index.html", error_message="このURLは既に処理済みです。新しい動画を選択してください。", genres=genres_for_template, needs_gmail_auth=needs_gmail_auth)
+
+    # デバッグ: 受信したURLを確認
+    print(f"\n{'='*50}")
+    print(f"📥 受信リクエスト情報:")
+    print(f"   メソッド: {request.method}")
+    print(f"   受信URL: {youtube_url}")
+    print(f"   ジャンル: {genre}")
+    print(f"{'='*50}\n")
 
     try:
         print("\n==============================")
@@ -400,6 +417,10 @@ def index():
 
         # 結果表示
         escaped_text = cleaned.replace("<", "&lt;").replace(">", "&gt;")
+        
+        # 処理完了したURLをセッションに記録（重複処理防止用）
+        session['last_processed_url'] = youtube_url
+        
         return render_template(
             "result.html",
             title=title,
@@ -507,5 +528,6 @@ def shutdown():
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    # debug=True はファイル変更時に自動リロードされ、リクエストが重複実行される可能性があるため無効化
+    app.run(host="0.0.0.0", port=port, debug=False)
 
