@@ -57,7 +57,6 @@ def download_captions(youtube_url: str) -> Optional[Path]:
     clean_url = clean_youtube_url(youtube_url)
     cmd = [
         "yt-dlp",
-        "--impersonate", "chrome",
         "--extractor-args", "youtube:player_client=web_creator,ios,android",
         "--write-auto-sub",
         "--sub-lang", "ja,en",
