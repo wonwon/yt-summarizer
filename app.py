@@ -49,6 +49,17 @@ if not (GEMINI_API_KEY_PRIMARY or GEMINI_API_KEY):
 CAPTIONS_DIR = Path("captions")
 CAPTIONS_DIR.mkdir(exist_ok=True)
 
+# 起動時クリーンアップ: 前回残ったファイルを削除
+# 異常終了やサーバー再起動時に古いファイルが解析されることを防止
+print("🧹 [起動時] captionsフォルダをクリーンアップ中...")
+for file in CAPTIONS_DIR.glob("*"):
+    try:
+        file.unlink()
+        print(f"  🗑️ 削除: {file.name}")
+    except Exception as e:
+        print(f"  ⚠️ 削除失敗: {file.name} - {e}")
+print("✅ [起動時] クリーンアップ完了\n")
+
 PROMPTS_FILE = "prompts.json"
 PROMPTS = {}
 

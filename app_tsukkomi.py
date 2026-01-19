@@ -17,6 +17,16 @@ MODEL_NAME = "gemini-2.5-flash-lite"
 CAPTIONS_DIR = Path("captions")
 CAPTIONS_DIR.mkdir(exist_ok=True)
 
+# 起動時クリーンアップ: 前回残ったファイルを削除
+print("🧹 [起動時] captionsフォルダをクリーンアップ中...")
+for file in CAPTIONS_DIR.glob("*"):
+    try:
+        file.unlink()
+        print(f"  🗑️ 削除: {file.name}")
+    except Exception as e:
+        print(f"  ⚠️ 削除失敗: {file.name} - {e}")
+print("✅ [起動時] クリーンアップ完了\n")
+
 app = Flask(__name__)
 app.secret_key = "tsukkomi_secret_key"
 
