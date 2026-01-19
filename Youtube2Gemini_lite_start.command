@@ -2,6 +2,18 @@
 cd "$(dirname "$0")"
 dot_clean -m .
 
+# 仮想環境の有効化
+if [ -d "$HOME/YouTubeInsightGen_venv" ]; then
+    source $HOME/YouTubeInsightGen_venv/bin/activate
+else
+    echo "❌ 仮想環境が見つかりません: $HOME/YouTubeInsightGen_venv"
+    echo "以下のコマンドで作成してください:"
+    echo "python3 -m venv ~/YouTubeInsightGen_venv"
+    echo "~/YouTubeInsightGen_venv/bin/pip install -r requirements.txt"
+    read -p "[Enter] キーを押して終了してください..."
+    exit 1
+fi
+
 # GeminiモデルをLiteに指定
 export GEMINI_MODEL="gemini-2.5-flash-lite"
 export PORT=8082
@@ -25,7 +37,7 @@ echo "⚠ 注意: サーバー実行中は、このターミナルウィンド�
 (sleep 2 && open http://127.0.0.1:$PORT) &
 
 # Flaskアプリの起動
-python3 app.py
+python app.py
 
 # 正常終了かエラーかで分岐
 if [ $? -ne 0 ]; then
