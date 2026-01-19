@@ -390,6 +390,17 @@ def index():
                     print(f"⚠️ ファイル削除失敗: {file} - {e}")
 
         vtt_path = download_captions(cleaned_url)
+        
+        if vtt_path is None:
+            return """<h2>❌ 字幕の取得に失敗しました</h2>
+            <p>以下の理由が考えられます：</p>
+            <ul>
+                <li>動画に字幕が設定されていない</li>
+                <li>動画が非公開または削除されている</li>
+                <li>yt-dlpによる字幕取得に失敗した</li>
+            </ul>
+            <p><a href="/">戻る</a></p>""", 500
+        
         title = vtt_path.stem
         cleaned = clean_text(parse_vtt(vtt_path))
 
