@@ -378,15 +378,16 @@ def index():
 
         cleaned_url = clean_youtube_url(youtube_url)
 
-        # 既存ファイル削除
-        for ext in ("*.vtt", "*.txt"):
-            for file in CAPTIONS_DIR.glob(ext):
-                # 隠しファイル（._*）も削除対象に含めるが、ファイルリスト取得時には無視する
+        # 既存ファイル削除（隠しファイルを含むすべてのファイル）
+        print("🧹 captionsフォルダをクリーンアップ中...")
+        for file in CAPTIONS_DIR.glob("*"):
+            if file.is_file():
                 try:
                     file.unlink()
-                    print(f"🗑️ 旧ファイル削除: {file}")
+                    print(f"  🗑️ 削除: {file.name}")
                 except Exception as e:
-                    print(f"⚠️ ファイル削除失敗: {file} - {e}")
+                    print(f"  ⚠️ 削除失敗: {file.name} - {e}")
+        print("✅ クリーンアップ完了")
 
         vtt_path = download_captions(cleaned_url)
         
