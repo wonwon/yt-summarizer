@@ -49,23 +49,6 @@ if not (GEMINI_API_KEY_PRIMARY or GEMINI_API_KEY):
 CAPTIONS_DIR = Path("captions")
 CAPTIONS_DIR.mkdir(exist_ok=True)
 
-# 起動時クリーンアップ: 前回残ったファイルを削除
-# 異常終了やサーバー再起動時に古いファイルが解析されることを防止
-print("🧹 [起動時] captionsフォルダをクリーンアップ中...")
-try:
-    # macOSの._*ファイルも含めて強制削除（findコマンド使用）
-    # ._*ファイルは削除できないことがあるが、download_captionsで無視されるため問題なし
-    import subprocess
-    result = subprocess.run(
-        ["find", str(CAPTIONS_DIR), "-type", "f", "-delete"],
-        capture_output=True,
-        text=True
-    )
-    # エラーは無視（._*ファイルの削除エラーは無害）
-    print(f"✅ [起動時] クリーンアップ完了\n")
-except Exception as e:
-    print(f"⚠️ [起動時] クリーンアップエラー: {e}\n")
-
 PROMPTS_FILE = "prompts.json"
 PROMPTS = {}
 
@@ -384,19 +367,7 @@ def index():
 
         cleaned_url = clean_youtube_url(youtube_url)
 
-        # 既存ファイル削除（隠しファイルを含むすべてのファイル）
-        print("🧹 captionsフォルダをクリーンアップ中...")
-        try:
-            # ._*ファイルは削除できないことがあるが、download_captionsで無視されるため問題なし
-            result = subprocess.run(
-                ["find", str(CAPTIONS_DIR), "-type", "f", "-delete"],
-                capture_output=True,
-                text=True
-            )
-            # エラーは無視（._*ファイルの削除エラーは無害）
-            print("✅ クリーンアップ完了")
-        except Exception as e:
-            print(f"⚠️ クリーンアップエラー: {e}")
+
 
         vtt_path = download_captions(cleaned_url)
         
@@ -442,13 +413,27 @@ def index():
         attachment_to_send = TEMP_MP3_FILE if mp3_generated and os.path.exists(TEMP_MP3_FILE) else None
         send_gmail(subject, html_body, GMAIL_TO, attachment_to_send)
 
-        # 一時ファイル削除
+        # メール送信完了後にクリーンアップ
+        print("🧹 [メール送信後] captionsフォルダをクリーンアップ中...")
+        try:
+            for file in CAPTIONS_DIR.iterdir():
+                if file.is_file():
+                    try:
+                        file.unlink()
+                        print(f"  🗑️ 削除: {file.name}")
+                    except Exception as e:
+                        # ._*ファイルの削除エラーは無視（次回処理で上書きされる）
+                        print(f"  ⚠️ 削除失敗（無視）: {file.name}")
+        except Exception as e:
+            print(f"⚠️ クリーンアップエラー: {e}")
+        print("✅ [メール送信後] クリーンアップ完了")
+
+        # 一時TTSファイル削除
         if os.path.exists(TEMP_MP3_FILE):
             os.remove(TEMP_MP3_FILE)
             print(f"🗑️ 一時TTSファイル削除: {TEMP_MP3_FILE}")
 
-
-        # 結果表示（クリーンアップはfinallyブロックで実行）
+        # 結果表示
         escaped_text = cleaned.replace("<", "&lt;").replace(">", "&gt;")
         
         # 処理完了したURLをセッションに記録（重複処理防止用）
