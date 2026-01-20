@@ -52,13 +52,19 @@ CAPTIONS_DIR.mkdir(exist_ok=True)
 # 起動時クリーンアップ: 前回残ったファイルを削除
 # 異常終了やサーバー再起動時に古いファイルが解析されることを防止
 print("🧹 [起動時] captionsフォルダをクリーンアップ中...")
-for file in CAPTIONS_DIR.glob("*"):
-    try:
-        file.unlink()
-        print(f"  🗑️ 削除: {file.name}")
-    except Exception as e:
-        print(f"  ⚠️ 削除失敗: {file.name} - {e}")
-print("✅ [起動時] クリーンアップ完了\n")
+try:
+    # macOSの._*ファイルも含めて強制削除（findコマンド使用）
+    # ._*ファイルは削除できないことがあるが、download_captionsで無視されるため問題なし
+    import subprocess
+    result = subprocess.run(
+        ["find", str(CAPTIONS_DIR), "-type", "f", "-delete"],
+        capture_output=True,
+        text=True
+    )
+    # エラーは無視（._*ファイルの削除エラーは無害）
+    print(f"✅ [起動時] クリーンアップ完了\n")
+except Exception as e:
+    print(f"⚠️ [起動時] クリーンアップエラー: {e}\n")
 
 PROMPTS_FILE = "prompts.json"
 PROMPTS = {}
@@ -380,14 +386,17 @@ def index():
 
         # 既存ファイル削除（隠しファイルを含むすべてのファイル）
         print("🧹 captionsフォルダをクリーンアップ中...")
-        for file in CAPTIONS_DIR.glob("*"):
-            if file.is_file():
-                try:
-                    file.unlink()
-                    print(f"  🗑️ 削除: {file.name}")
-                except Exception as e:
-                    print(f"  ⚠️ 削除失敗: {file.name} - {e}")
-        print("✅ クリーンアップ完了")
+        try:
+            # ._*ファイルは削除できないことがあるが、download_captionsで無視されるため問題なし
+            result = subprocess.run(
+                ["find", str(CAPTIONS_DIR), "-type", "f", "-delete"],
+                capture_output=True,
+                text=True
+            )
+            # エラーは無視（._*ファイルの削除エラーは無害）
+            print("✅ クリーンアップ完了")
+        except Exception as e:
+            print(f"⚠️ クリーンアップエラー: {e}")
 
         vtt_path = download_captions(cleaned_url)
         
