@@ -46,7 +46,8 @@ if not (GEMINI_API_KEY_PRIMARY or GEMINI_API_KEY):
     print("❌ GEMINI_API_KEY_PRIMARY または GEMINI_API_KEY が設定されていません")
     import sys
     sys.exit(1)
-CAPTIONS_DIR = Path("captions")
+# captionsフォルダを内蔵ストレージのvenvフォルダ内に配置（exFATの問題を回避）
+CAPTIONS_DIR = Path.home() / "YouTubeInsightGen_venv" / "captions"
 CAPTIONS_DIR.mkdir(exist_ok=True)
 
 PROMPTS_FILE = "prompts.json"
@@ -85,6 +86,41 @@ def clean_youtube_url(url: str) -> str:
 
 
 def download_captions(youtube_url: str) -> Path:
+    # 新しい字幕ダウンロード前に、既存のVTTファイルをすべて削除
+    import datetime
+    import subprocess
+    log_msg = f"\n[{datetime.datetime.now()}] download_captions: クリーンアップ開始\n"
+    print("🧹 [ダウンロード前] captionsフォルダをクリーンアップ中...")
+    
+    try:
+        # globで明示的にVTTファイルのリストを取得
+        vtt_files = [f for f in CAPTIONS_DIR.glob("*.vtt") if not f.name.startswith("._")]
+        log_msg += f"  対象ファイル数: {len(vtt_files)}\n"
+        print(f"  対象ファイル数: {len(vtt_files)}")
+        
+        # 各ファイルを個別に削除（外部HDDでPythonのunlink()が動作しないため、rmコマンドを使用）
+        deleted_count = 0
+        for vtt_file in vtt_files:
+            result = subprocess.run(["rm", "-f", str(vtt_file)], capture_output=True, text=True)
+            if result.returncode == 0:
+                deleted_count += 1
+                log_msg += f"  削除成功: {vtt_file.name}\n"
+            else:
+                log_msg += f"  削除失敗: {vtt_file.name} - {result.stderr}\n"
+        
+        log_msg += f"  削除完了: {deleted_count}/{len(vtt_files)}\n"
+        print(f"  ✅ 削除完了: {deleted_count}/{len(vtt_files)}")
+        
+    except Exception as e:
+        log_msg += f"クリーンアップエラー: {e}\n"
+        print(f"⚠️ クリーンアップエラー: {e}")
+    
+    print("✅ [ダウンロード前] クリーンアップ完了")
+    
+    # デバッグログをファイルに出力
+    with open(CAPTIONS_DIR.parent / "cleanup_debug.log", "a", encoding="utf-8") as f:
+        f.write(log_msg)
+    
     clean_url = clean_youtube_url(youtube_url)
     cmd = [
             "yt-dlp",
@@ -457,14 +493,43 @@ def index():
         return f"<h2>❌ エラー発生</h2><pre>{str(e)}</pre>", 500
     finally:
         # 処理が成功しても失敗しても、必ずcaptionsフォルダーをクリーンアップ
+        import datetime
+        import subprocess
+        log_msg = f"\n[{datetime.datetime.now()}] FINALLY: クリーンアップ開始\n"
         print("\n🧹 [FINALLY] 字幕ファイルをクリーンアップ中...")
-        for file in CAPTIONS_DIR.glob("*"):
-            try:
-                file.unlink()
-                print(f"  🗑️ 削除: {file.name}")
-            except Exception as e:
-                print(f"  ⚠️ 削除失敗: {file.name} - {e}")
-        print("✅ [FINALLY] クリーンアップ完了\n")
+        
+        try:
+            # globで明示的にファイルのリストを取得
+            all_files = [f for f in CAPTIONS_DIR.glob("*") if f.is_file() and not f.name.startswith("._")]
+            log_msg += f"  対象ファイル数: {len(all_files)}\n"
+            print(f"  対象ファイル数: {len(all_files)}")
+            
+            # 各ファイルを個別に削除（外部HDDでPythonのunlink()が動作しないため、rmコマンドを使用）
+            deleted_count = 0
+            for file in all_files:
+                result = subprocess.run(["rm", "-f", str(file)], capture_output=True, text=True)
+                if result.returncode == 0:
+                    deleted_count += 1
+                else:
+                    log_msg += f"  削除失敗: {file.name} - {result.stderr}\n"
+            
+            # 削除後のファイル数を確認
+            after_files = [f for f in CAPTIONS_DIR.glob("*") if f.is_file() and not f.name.startswith("._")]
+            deleted_count = len(before_files) - len(after_files)
+            
+            log_msg += f"クリーンアップ完了: 削除={deleted_count}, 残り={len(after_files)}\n"
+            print(f"✅ [FINALLY] クリーンアップ完了: 削除={deleted_count}, 残り={len(after_files)}\n")
+            
+        except Exception as e:
+            log_msg += f"クリーンアップ処理でエラー: {e}\n"
+            print(f"❌ [FINALLY] クリーンアップ処理でエラー: {e}\n")
+        
+        # デバッグログをファイルに出力
+        try:
+            with open(CAPTIONS_DIR.parent / "cleanup_debug.log", "a", encoding="utf-8") as f:
+                f.write(log_msg)
+        except Exception as log_error:
+            print(f"⚠️ ログファイル書き込みエラー: {log_error}")
 
 
 @app.route("/auth")
